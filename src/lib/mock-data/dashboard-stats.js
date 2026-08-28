@@ -1,9 +1,11 @@
+import { applications } from "./applications";
+
 export const dashboardStats = [
   {
     id: 'total-applications',
     label: 'Total Applications',
     labelKey: 'totalApplications',
-    value: 65,
+    value: applications.length,
     icon: 'ClipboardList',
     color: 'green',
   },
@@ -11,7 +13,7 @@ export const dashboardStats = [
     id: 'rejected-applications',
     label: 'Rejected Applications',
     labelKey: 'rejectedApplications',
-    value: 5,
+    value: applications.filter(app => app.status === 'Rejected').length,
     icon: 'XCircle',
     color: 'red',
   },

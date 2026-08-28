@@ -4,7 +4,6 @@ import { createContext, useContext, useState } from 'react';
 const WizardContext = createContext(null);
 
 const initialFormData = {
-  // Company Details
   legalNameEn: '',
   legalNameAr: '',
   crNumber: '',
@@ -46,10 +45,8 @@ const initialFormData = {
   additionalNotes: '',
   supportingDocs: null,
 
-  // Survey answers (sections 1-4)
   survey: {},
 
-  // Terms
   agreedToTerms: false,
 };
 
@@ -91,6 +88,8 @@ export function WizardProvider({ children }) {
 
 export function useWizard() {
   const context = useContext(WizardContext);
-  if (!context) throw new Error('useWizard must be used within a WizardProvider');
+  if (!context) {
+    throw new Error('useWizard must be used within a WizardProvider');
+  }
   return context;
 }
