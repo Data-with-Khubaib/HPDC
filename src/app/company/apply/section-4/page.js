@@ -4,6 +4,11 @@ import { useRouter } from 'next/navigation';
 import { useWizard } from '@/components/apply/WizardContext';
 import { useLanguage } from '@/components/layout/LanguageContext';
 import Modal from '@/components/ui/Modal';
+import FormField from '@/components/apply/FormField';
+import TextInput from '@/components/apply/TextInput';
+import RadioGroup from '@/components/apply/RadioGroup';
+import { QuestionCard } from '@/components/apply/QuestionCard';
+import ApplicationAcceptedModal from '@/components/apply/ApplicationAcceptedModal';
 import { CheckCircle, ChevronDown } from 'lucide-react';
 
 function SurveyQuestion({ id, question, type = 'radio' }) {
@@ -14,14 +19,13 @@ function SurveyQuestion({ id, question, type = 'radio' }) {
   if (type === 'textarea') {
     return (
       <div className="border border-[#E5E7EB] rounded-2xl p-5 bg-white mb-4 shadow-xs">
-        <label className="block text-sm font-medium text-[#374151] mb-2">{question}</label>
-        <input
-          type="text"
-          value={value}
-          onChange={(e) => updateSurvey(id, e.target.value)}
-          className="w-full pb-2 pt-2 text-sm bg-transparent border-b border-[#D1D5DB] text-[#111827] placeholder:text-[#9CA3AF] focus:outline-none focus:border-[#2D6A4F] transition-colors"
-          placeholder="Short-answer text"
-        />
+        <FormField label={question}>
+          <TextInput
+            value={value}
+            onChange={(v) => updateSurvey(id, v)}
+            placeholder="Short-answer text"
+          />
+        </FormField>
       </div>
     );
   }
@@ -31,37 +35,13 @@ function SurveyQuestion({ id, question, type = 'radio' }) {
     : [{ val: 'Yes', label: t('yes') }, { val: 'Partial', label: t('partial') }, { val: 'No', label: t('no') }];
 
   return (
-    <div className="mb-6">
-      <p className="text-sm font-medium text-[#374151] mb-3">{question}</p>
-      <div className={type === 'toggle' ? 'grid grid-cols-2 gap-4 w-full' : 'grid grid-cols-1 sm:grid-cols-3 gap-4 w-full'}>
-        {options.map((opt) => {
-          const isSelected = value === opt.val;
-          return (
-            <button
-              key={opt.val}
-              type="button"
-              onClick={() => updateSurvey(id, opt.val)}
-              className={`w-full py-3.5 px-4 rounded-2xl border text-sm font-medium transition-all duration-200 cursor-pointer flex items-center justify-center ${
-                isSelected
-                  ? 'border-[#1B4332] bg-[#F0FDF4] text-[#1B4332] font-semibold shadow-xs ring-1 ring-[#1B4332]'
-                  : 'border-[#D1D5DB] bg-white text-[#4B5563] hover:border-[#2D6A4F]/60 hover:bg-emerald-50/30'
-              }`}
-            >
-              {opt.label}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function QuestionCard({ title, children }) {
-  return (
-    <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 lg:p-8 shadow-sm mb-6">
-      <h2 className="text-xl sm:text-2xl font-bold text-[#1B4332] mb-6">{title}</h2>
-      {children}
-    </div>
+    <FormField label={question} className="mb-6">
+      <RadioGroup
+        value={value}
+        onChange={(v) => updateSurvey(id, v)}
+        options={options}
+      />
+    </FormField>
   );
 }
 
@@ -130,6 +110,7 @@ export default function Section4Page() {
   const { formData, updateField, clearForm } = useWizard();
   const { t } = useLanguage();
   const [paymentOpen, setPaymentOpen] = useState(false);
+  const [acceptedModalOpen, setAcceptedModalOpen] = useState(false);
 
   const handleNext = () => {
     setPaymentOpen(true);
@@ -137,7 +118,7 @@ export default function Section4Page() {
 
   const handleProceedToPayment = () => {
     setPaymentOpen(false);
-    router.push('/company/apply/payment');
+    setAcceptedModalOpen(true);
   };
 
   return (
@@ -201,7 +182,7 @@ export default function Section4Page() {
       </QuestionCard>
 
       {/* Terms Card */}
-      <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 lg:p-8 shadow-sm mb-6">
+      <QuestionCard>
         <label className="flex items-start gap-3 cursor-pointer">
           <input
             type="checkbox"
@@ -213,7 +194,7 @@ export default function Section4Page() {
             I agree to the Terms & Conditions and certify that the information provided in this ESG assessment is true, accurate, and complete to the best of my knowledge.
           </span>
         </label>
-      </div>
+      </QuestionCard>
 
       {/* Navigation */}
       <div className="flex items-center justify-between mt-6 mb-8 py-4">
@@ -252,6 +233,11 @@ export default function Section4Page() {
         isOpen={paymentOpen}
         onClose={() => setPaymentOpen(false)}
         onProceed={handleProceedToPayment}
+      />
+
+      <ApplicationAcceptedModal
+        isOpen={acceptedModalOpen}
+        onClose={() => setAcceptedModalOpen(false)}
       />
     </div>
   );

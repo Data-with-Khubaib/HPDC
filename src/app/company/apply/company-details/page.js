@@ -3,131 +3,13 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useWizard } from '@/components/apply/WizardContext';
 import { useLanguage } from '@/components/layout/LanguageContext';
-import { Plus, Upload, AlertCircle, Folder } from 'lucide-react';
-
-/* ──────────────── HELPER COMPONENTS ──────────────── */
-
-// FormField wrapper for label + input + error message
-function FormField({ label, required, error, children, className = '' }) {
-  return (
-    <div className={`mb-2 ${className}`}>
-      <label className="block text-sm font-medium text-[#374151] mb-1.5">
-        {label} {required && <span className="text-[#E53E3E]">*</span>}
-      </label>
-      {children}
-      {error && (
-        <p className="text-xs text-[#E53E3E] mt-1 flex items-center gap-1">
-          <AlertCircle size={12} /> {error}
-        </p>
-      )}
-    </div>
-  );
-}
-
-// TextInput with rounded corners and optional Arabic restriction
-function TextInput({ value, onChange, placeholder, type = 'text', hasError, arabicOnly }) {
-  const handleChange = (e) => {
-    let val = e.target.value;
-    if (arabicOnly) {
-      val = val.replace(/[^\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF\s0-9٠-٩.,،؛:!؟\-()]/g, '');
-    }
-    onChange(val);
-  };
-
-  return (
-    <input
-      type={type}
-      value={value}
-      onChange={handleChange}
-      placeholder={placeholder}
-      dir={arabicOnly ? 'rtl' : undefined}
-      className={`w-full px-4 py-3 text-sm border rounded-2xl bg-white text-[#111827] placeholder:text-[#9CA3AF] focus:outline-none transition-all ${
-        hasError
-          ? 'border-[#E53E3E] focus:ring-2 focus:ring-red-200'
-          : 'border-[#D1D5DB] focus:ring-2 focus:ring-[#2D6A4F]/20 focus:border-[#2D6A4F]'
-      }`}
-    />
-  );
-}
-
-// SelectInput with rounded corners
-function SelectInput({ value, onChange, options, placeholder, hasError }) {
-  return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className={`w-full px-4 py-3 text-sm border rounded-2xl bg-white text-[#111827] focus:outline-none cursor-pointer appearance-none ${
-        hasError
-          ? 'border-[#E53E3E] focus:ring-2 focus:ring-red-200'
-          : 'border-[#D1D5DB] focus:ring-2 focus:ring-[#2D6A4F]/20 focus:border-[#2D6A4F]'
-      }`}
-    >
-      <option value="">{placeholder || 'Select...'}</option>
-      {options.map((opt) => (
-        <option key={opt} value={opt}>{opt}</option>
-      ))}
-    </select>
-  );
-}
-
-// RadioGroup styled as Pill / Box Buttons (Yes / Partial / No side-by-side in columns)
-function RadioGroup({ value, onChange, options }) {
-  const gridCols = options.length === 3 ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-2';
-  return (
-    <div className={`grid ${gridCols} gap-4 w-full`}>
-      {options.map((opt) => {
-        const isSelected = value === opt.val;
-        return (
-          <button
-            key={opt.val}
-            type="button"
-            onClick={() => onChange(opt.val)}
-            className={`w-full py-3.5 px-4 rounded-2xl border text-sm font-medium transition-all duration-200 cursor-pointer flex items-center justify-center ${
-              isSelected
-                ? 'border-[#1B4332] bg-[#F0FDF4] text-[#1B4332] font-semibold shadow-xs ring-1 ring-[#1B4332]'
-                : 'border-[#D1D5DB] bg-white text-[#4B5563] hover:border-[#2D6A4F]/60 hover:bg-emerald-50/30'
-            }`}
-          >
-            {opt.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-// SectionTitle for inside each section card
-function SectionTitle({ children }) {
-  return (
-    <h2 className="text-xl sm:text-2xl font-bold text-[#1B4332] mb-6">
-      {children}
-    </h2>
-  );
-}
-
-// FileUploadBox with Folder icon section on the right
-function FileUploadBox({ onChange, fileName, hasError }) {
-  return (
-    <label className={`relative flex items-center justify-between border rounded-2xl bg-white overflow-hidden cursor-pointer transition-all duration-200 hover:border-[#2D6A4F] ${
-      hasError ? 'border-[#E53E3E]' : 'border-[#D1D5DB]'
-    }`}>
-      <span className="px-4 py-3.5 text-sm text-[#6B7280] truncate flex-1">
-        {fileName || 'No file chosen'}
-      </span>
-      <div className="px-4 py-3.5 border-l border-[#D1D5DB] bg-gray-50/50 text-[#6B7280] flex items-center justify-center hover:bg-emerald-50/50 hover:text-[#2D6A4F] transition-colors shrink-0">
-        <Folder size={18} />
-      </div>
-      <input
-        type="file"
-        onChange={onChange}
-        accept=".pdf,.doc,.docx"
-        className="hidden"
-      />
-    </label>
-  );
-}
-
-/* ──────────────── MAIN PAGE COMPONENT ──────────────── */
+import FormField from '@/components/apply/FormField';
+import TextInput from '@/components/apply/TextInput';
+import SelectInput from '@/components/apply/SelectInput';
+import RadioGroup from '@/components/apply/RadioGroup';
+import FileUploadBox from '@/components/apply/FileUploadBox';
+import { SectionTitle, QuestionCard } from '@/components/apply/QuestionCard';
+import { Plus, Upload, AlertCircle } from 'lucide-react';
 
 export default function CompanyDetailsPage() {
   const router = useRouter();
@@ -137,12 +19,6 @@ export default function CompanyDetailsPage() {
 
   const yesNoOptions = [
     { val: 'Yes', label: t('yes') },
-    { val: 'No', label: t('no') },
-  ];
-
-  const yesPartialNoOptions = [
-    { val: 'Yes', label: t('yes') },
-    { val: 'Partial', label: t('partial') },
     { val: 'No', label: t('no') },
   ];
 
@@ -217,8 +93,7 @@ export default function CompanyDetailsPage() {
       )}
 
       {/* ===== CARD 1: Organization Basic Details ===== */}
-      <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 lg:p-8 shadow-sm mb-6">
-        <SectionTitle>{t('orgBasicDetails')}</SectionTitle>
+      <QuestionCard title={t('orgBasicDetails')}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <FormField label={t('legalNameEn')} required error={errors.legalNameEn}>
             <TextInput value={formData.legalNameEn} onChange={(v) => updateField('legalNameEn', v)} placeholder="interlink" hasError={!!errors.legalNameEn} />
@@ -239,11 +114,10 @@ export default function CompanyDetailsPage() {
             <SelectInput value={formData.sector} onChange={(v) => updateField('sector', v)} options={['Manufacturing', 'Food Processing', 'Logistics', 'Technology', 'Energy', 'Healthcare', 'Construction', 'Agriculture', 'Mining', 'Hospitality', 'Retail', 'Other']} placeholder="Sector" hasError={!!errors.sector} />
           </FormField>
         </div>
-      </div>
+      </QuestionCard>
 
       {/* ===== CARD 2: Address and Contact Details ===== */}
-      <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 lg:p-8 shadow-sm mb-6">
-        <SectionTitle>{t('addressContactDetails')}</SectionTitle>
+      <QuestionCard title={t('addressContactDetails')}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <FormField label={t('headOfficeEn')} required error={errors.headOfficeEn}>
             <TextInput value={formData.headOfficeEn} onChange={(v) => updateField('headOfficeEn', v)} placeholder="Enter address in English" hasError={!!errors.headOfficeEn} />
@@ -263,11 +137,10 @@ export default function CompanyDetailsPage() {
             </FormField>
           </div>
         </div>
-      </div>
+      </QuestionCard>
 
       {/* ===== CARD 3: Legal Documents ===== */}
-      <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 lg:p-8 shadow-sm mb-6">
-        <SectionTitle>{t('legalDocs')}</SectionTitle>
+      <QuestionCard title={t('legalDocs')}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {[
             { labelKey: 'crDocument', field: 'crDocument' },
@@ -284,11 +157,10 @@ export default function CompanyDetailsPage() {
             </FormField>
           ))}
         </div>
-      </div>
+      </QuestionCard>
 
       {/* ===== CARD 4: Scope and Multisite Configuration ===== */}
-      <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 lg:p-8 shadow-sm mb-6">
-        <SectionTitle>Scope and Multisite Configuration</SectionTitle>
+      <QuestionCard title="Scope and Multisite Configuration">
         <div className="flex flex-col gap-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <FormField label="Scope of Certification (English)" required error={errors.certAreasEn}>
@@ -299,16 +171,14 @@ export default function CompanyDetailsPage() {
             </FormField>
           </div>
 
-          {/* Question with 2 side-by-side Yes / No pill buttons matching screenshot */}
           <FormField label={t('multisiteQuestion')} required error={errors.multisite}>
             <RadioGroup value={formData.multisite} onChange={(v) => updateField('multisite', v)} options={yesNoOptions} />
           </FormField>
         </div>
-      </div>
+      </QuestionCard>
 
       {/* ===== CARD 5: Workforce Details ===== */}
-      <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 lg:p-8 shadow-sm mb-6">
-        <SectionTitle>{t('workforceDetails')}</SectionTitle>
+      <QuestionCard title={t('workforceDetails')}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
           <FormField label={t('totalEmployees')} required error={errors.totalEmployees}>
             <TextInput value={formData.totalEmployees} onChange={(v) => updateField('totalEmployees', v)} placeholder="e.g. 500" type="number" hasError={!!errors.totalEmployees} />
@@ -332,11 +202,10 @@ export default function CompanyDetailsPage() {
             <RadioGroup value={formData.remoteWork} onChange={(v) => updateField('remoteWork', v)} options={yesNoOptions} />
           </FormField>
         </div>
-      </div>
+      </QuestionCard>
 
       {/* ===== CARD 6: Brand Details ===== */}
-      <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 lg:p-8 shadow-sm mb-6">
-        <SectionTitle>{t('brandDetails')}</SectionTitle>
+      <QuestionCard title={t('brandDetails')}>
         {formData.brands.map((brand, idx) => (
           <div key={idx} className="border border-[#E5E7EB] rounded-2xl p-5 mb-4 bg-[#FAFAFA]">
             <p className="text-xs font-semibold text-[#2D6A4F] uppercase tracking-wide mb-4">Brand {idx + 1}</p>
@@ -369,13 +238,10 @@ export default function CompanyDetailsPage() {
           <Plus size={18} />
           {t('addBrand')}
         </button>
-      </div>
+      </QuestionCard>
 
       {/* ===== CARD 7: Certification and Compliance Status ===== */}
-      <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 lg:p-8 shadow-sm mb-6">
-        <SectionTitle>{t('certComplianceStatus')}</SectionTitle>
-        
-        {/* Full width stacked items per ISO question matching reference screenshot */}
+      <QuestionCard title={t('certComplianceStatus')}>
         <div className="flex flex-col gap-6">
           {[
             { label: 'ISO 9001 (Quality) *', field: 'iso9001' },
@@ -389,7 +255,7 @@ export default function CompanyDetailsPage() {
             </FormField>
           ))}
 
-          {/* Inset Sub-Card Container for Other Certifications (Matching Reference Image) */}
+          {/* Inset Sub-Card Container for Other Certifications */}
           <div className="border border-[#E5E7EB] rounded-2xl p-5 bg-white mt-2 shadow-xs">
             <label className="block text-sm font-medium text-[#374151] mb-2">
               Other certifications <span className="text-[#6B7280] font-normal">(optional)</span>
@@ -403,11 +269,10 @@ export default function CompanyDetailsPage() {
             />
           </div>
         </div>
-      </div>
+      </QuestionCard>
 
       {/* ===== CARD 8: ESG and Sustainability Practice Details ===== */}
-      <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 lg:p-8 shadow-sm mb-6">
-        <SectionTitle>{t('esgPracticeDetails')}</SectionTitle>
+      <QuestionCard title={t('esgPracticeDetails')}>
         <div className="flex flex-col gap-6">
           {[
             { label: 'ESG Program in Place', field: 'esgProgram' },
@@ -423,13 +288,10 @@ export default function CompanyDetailsPage() {
             </FormField>
           ))}
         </div>
-      </div>
+      </QuestionCard>
 
       {/* ===== CARD 9: Additional Notes & Supporting Documents ===== */}
-      <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 lg:p-8 shadow-sm mb-6">
-        <SectionTitle>{t('additionalNotes')}</SectionTitle>
-        
-        {/* Inset Sub-Card Container for Additional Notes */}
+      <QuestionCard title={t('additionalNotes')}>
         <div className="border border-[#E5E7EB] rounded-2xl p-5 bg-white mb-8 shadow-xs">
           <label className="block text-sm font-medium text-[#374151] mb-2">
             Additional Notes <span className="text-[#6B7280] font-normal">(optional)</span>
@@ -456,7 +318,7 @@ export default function CompanyDetailsPage() {
             className="mt-4"
           />
         </div>
-      </div>
+      </QuestionCard>
 
       {/* Bottom Actions Bar */}
       <div className="flex items-center justify-between mt-6 mb-8 py-4">
